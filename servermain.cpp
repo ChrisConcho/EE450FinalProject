@@ -1,17 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <string>
-
+#include <iostream>
+#include "servermain.h"
 #define BACKLOG 10
 #define TCPPort "33484"
 #define UDPPort "32484"
@@ -41,15 +29,146 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int SocketConnection(std::string protocol, const char * Port, bool Server){
+void serverMain::UDPConnections(int backendServer){
 
-	int sockfd;
-	struct addrinfo hints, *servinfo, *p;
-    struct sockaddr_storage their_addr; // connector's address information
     socklen_t sin_size;
+    struct addrinfo *p;
     struct sigaction sa;
     int yes=1;
     int rv;
+
+	memset(&hints, 0, sizeof hints);
+
+
+	hints.ai_family = AF_UNSPEC;
+	
+	hints.ai_socktype = SOCK_DGRAM;
+	
+	hints.ai_flags = AI_PASSIVE; 
+	
+	if ( backendServer == 1){
+
+		rv = getaddrinfo(localhost, APort, &hints, &servinfoA);
+	}
+	if( backendServer == 2){
+
+		rv = getaddrinfo(localhost, BPort, &hints, &servinfoB);
+	}
+
+	if (rv != 0 ) {
+
+		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+       
+	}
+
+	// make a socket:
+	if(backendServer == 1){
+
+		for(pA = servinfoA; pA != NULL; pA = pA->ai_next) {
+			
+        	if ((Asock = socket(pA->ai_family, pA->ai_socktype,
+                        pA->ai_protocol)) == -1) {
+                    perror("server: socket");
+                    continue;
+                }
+     		break;
+        }
+
+        if( pA == NULL){
+
+			fprintf(stderr, "server: failed to bind \n");
+		}
+    }
+    if(backendServer == 2)
+    {
+    	for(pB = servinfoB; pB != NULL; pB = pB->ai_next){
+	    	
+	    	if ((Bsock = socket(pB->ai_family, pB->ai_socktype,
+	                    pB->ai_protocol)) == -1) {
+	                perror("server: socket");
+	                continue;
+	    	}
+			break;
+		}
+
+		if( pB == NULL){
+
+			fprintf(stderr, "server: failed to bind \n");
+		}
+	}
+
+}
+
+void serverMain::SendAndRcv(int send, int backendServer, char buf[]){
+	
+	int numbytes;
+	socklen_t sin_size;
+	struct sockaddr_storage their_addr;
+
+	if ( SocketConnection("UDP", UDPPort, true) != 0) {
+    	std::cout<< "An Error has occured in the allocating a UDP socket"<<std::endl;
+    	exit(1);
+    }
+
+
+	if (send == 1){
+
+		if(backendServer == 1){
+
+			UDPConnections(1);
+
+			if (sendto(Asock, buf, MAXBUFLEN , 0, pA->ai_addr, pA->ai_addrlen) == -1){
+			    perror("sendto 1 ");
+			    // exit(1);
+			}
+		}
+
+		if( backendServer == 2){
+
+			UDPConnections(2);
+			
+			if (sendto(Bsock, buf, MAXBUFLEN , 0, pB->ai_addr, pB->ai_addrlen) == -1){
+				    perror("sendto 1 ");
+				    // exit(1);
+			}
+
+		}
+
+	}
+
+	memset(buf,0, sizeof *buf);
+	
+	// char temp[MAXBUFLEN];
+
+    // buf = '';
+
+
+	sin_size = sizeof their_addr;
+
+	// std::cout<< "Waiting to recv message"<< std::endl;
+    if ((numbytes = recvfrom(udpsock, buf, MAXBUFLEN-1 , 0,
+        (struct sockaddr *)&their_addr, &sin_size)) == -1) {
+        perror("recvfrom");
+        // exit(1);
+    }
+    if( backendServer == 1){
+    	close(Asock);
+    }
+    if(backendServer == 2){
+    	close(Bsock);
+    }
+    close(udpsock);
+    
+
+    buf[numbytes] = '\0';
+    
+}
+
+int serverMain::SocketConnection(std::string protocol, const char * Port, bool Server){
+	
+	struct addrinfo *p, *servinfo;
+	int yes=1;
+	int tempsock;
 
 	memset(&hints, 0, sizeof hints);
 
@@ -86,20 +205,20 @@ int SocketConnection(std::string protocol, const char * Port, bool Server){
 	// make a socket:
 
 	for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+        if ((tempsock = socket(p->ai_family, p->ai_socktype,
                 p->ai_protocol)) == -1) {
             perror("server: socket");
             continue;
         }
 
         if(Server == true ){
-			if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
+			if (setsockopt(tempsock,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
 			    perror("setsockopt");
-			    exit(1);
+			    return -1;
 			}
 
-			if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1){
-				close(sockfd);
+			if (bind(tempsock, p->ai_addr, p->ai_addrlen) == -1){
+				close(tempsock);
 				perror("server:bind");
 				continue;
 
@@ -113,18 +232,28 @@ int SocketConnection(std::string protocol, const char * Port, bool Server){
 	if( p == NULL){
 
 		fprintf(stderr, "server: failed to bind \n");
-		exit(1);
+		return -1;
 	}
 
 
-	if(listen(sockfd,BACKLOG) == -1 && protocol.compare("TCP") == 0){
+	if(listen(tempsock,BACKLOG) == -1 && protocol.compare("TCP") == 0){
 
 		perror("listen");
-		exit(1);
+		return -1;
 
 	}
 
-	return sockfd;
+	if( protocol.compare("TCP") == 0){
+
+		sockfd = tempsock;
+	}
+
+	if ( protocol.compare("UDP") == 0){
+
+		udpsock = tempsock;
+	}
+
+	return 0;
 
 }
 
@@ -132,7 +261,7 @@ int SocketConnection(std::string protocol, const char * Port, bool Server){
 int main(void){
 	
 
-	int sockfd, new_fd, numbytes, udpsock, A_fd, B_fd;
+	int new_fd, numbytes;
 	char buf[MAXDATASIZE];  // listen on sock_fd, new connection on new_fd
     struct sigaction sa;
     char s[INET6_ADDRSTRLEN];
@@ -140,11 +269,17 @@ int main(void){
     socklen_t sin_size;
 
 
-
+    serverMain SM;
 	
-    sockfd = SocketConnection("TCP", TCPPort, true);
+    if( SM.SocketConnection("TCP", TCPPort, true) != 0){
 
-    udpsock = SocketConnection("UDP", UDPPort, true);
+    	std::cout<< "An Error has occured in the allocating a TCP socket"<<std::endl;
+    }
+
+    std::cout<< "The Main Server is up and running" << std::endl;
+    // if ( SM.SocketConnection("UDP", UDPPort, true) != 0) {
+    // 	std::cout<< "An Error has occured in the allocating a UDP socket"<<std::endl;
+    // }
 
 	sa.sa_handler = sigchld_handler; // reap all dead processes
     sigemptyset(&sa.sa_mask);
@@ -156,12 +291,53 @@ int main(void){
         exit(1);
     }
 
-    printf("server: waiting for connections...\n");
+	char msgA[100];
+	std::string Startup = "-*-";
+
+	std::strcpy(msgA ,Startup.c_str());
+	SM.SendAndRcv(1,1, msgA);
+
+	std::cout<< "The Main Server has received the country list from Server A using UDP over port " << UDPPort << std::endl;
+	std::string outputA(msgA);
+
+	char msgB[100];
+	std::strcpy(msgB ,Startup.c_str());
+	SM.SendAndRcv(1,2, msgB);
+
+	std::cout<< "The Main Server has received the country list from Server B using UDP over port " << UDPPort << std::endl;
+
+	std::cout<< "Country -> Backend Server"<<std::endl;
+
+	std::stringstream ssA(outputA);
+	std::string countryA;
+
+	while (std::getline(ssA, countryA, ',')){
+
+		SM.allCountries[countryA] = 1;
+
+		std::cout<< countryA << " -> A" <<std::endl;
+	}
+	//loop through and add the countries
+
+	
+	std::string outputB(msgB);
+
+	std::stringstream ssB(outputB);
+	std::string countryB;
+
+	while (std::getline(ssB, countryB, ',')){
+
+		SM.allCountries[countryB] = 2;
+		std::cout<<countryB << " -> B" <<std::endl;
+	}
+
+
+
 
     while(1) {  // main accept() loop
         
         sin_size = sizeof their_addr;
-        new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+        new_fd = accept(SM.sockfd, (struct sockaddr *)&their_addr, &sin_size);
         
         if (new_fd == -1) {
             
@@ -173,11 +349,14 @@ int main(void){
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
 
-        printf("server: got connection from %s\n", s);
+        // printf("server: got connection from %s\n", s);
 
         if (!fork()) { // this is the child process
-            close(sockfd); // child doesn't need the listener
+
+            close(SM.sockfd); // child doesn't need the listener
             
+            // char buf_msg[MAXBUFLEN] = buf;
+            memset(buf,0, sizeof *buf);
 
             if (send(new_fd, "Hello, world!", 13, 0) == -1){
                 perror("send");
@@ -188,7 +367,122 @@ int main(void){
 		        exit(1);
 		    }
 		    buf[numbytes] = '\0';
-		    printf("server: received '%s'\n",buf);
+		    // printf("server: received '%s'\n",buf);
+
+		    //Received Query!
+
+		    //Check if valid and who to send to
+		    
+		    std::string output(buf);
+
+		    // std::cout<< output<<std::endl;
+
+		    std::string country = output.substr(0, output.find(',')-1);
+
+			std::string tempid= output.substr(output.find(',') + 2, output.size());
+
+
+			int userid = std::stoi(tempid);
+
+			std::cout<< "The Main Server has received the request on User " <<userid << " in " << country<< " from the client using TCP over port " << TCPPort<<std::endl;
+			int BackServer = SM.allCountries[country];
+			bool flag = true;
+			if(BackServer > 0){
+				
+
+
+				int BackServer = SM.allCountries[country];
+				std::stringstream ss;
+				// std::cout<< "FOUND COUNTRY going to send query to Server: " << BackServer << std::endl;
+				
+				// memset(buf,0, sizeof *buf);
+
+				SM.SendAndRcv(1, BackServer, buf);
+				std::string serverString;
+				std::string serverPort;
+				if (BackServer == 1){
+					serverString = "A";
+					serverPort = APort;
+				}
+				if( BackServer == 2){
+					serverString = "B";
+					serverPort = BPort;
+				}
+
+				std::cout<< country << " shows up in "<<serverString<< std::endl;
+				std::cout<< "The Main Server has sent request from User " <<userid<< " to server "<<serverString<< " using UDP over port "<<serverPort<< std::endl;
+				
+				std::string temp(buf);
+				bool flag = true;
+				// std::cout<<"Msg From BackendServer: " + temp<<std::endl; //-----------------FLAG
+				if (temp.compare("-1") == 0){
+
+					std::cout<< "The Main Server has received 'User ID: Not found' from server "<<serverString<<std::endl;
+					output = "User " + tempid + "not found";
+
+				}
+
+				else if (temp.compare("-2") == 0){
+					output = "There are no other Users in this Country";
+				}
+
+				else if (temp.compare("-3") == 0){
+					output = "You are already Friends with Every User!";
+				}
+
+				else{
+
+					flag = false;
+
+					output = "The client has recieved results from Main Server: Recommended new friend ID is " + temp + " to User ID " + tempid;
+					
+					
+
+					std::cout<< "The Main Server has received a searching result of User "<< userid << " from server "<< serverString<<std::endl;
+
+					const void * a = output.c_str();
+				    if (send(new_fd, a, output.length() , 0) == -1){
+				        perror("send");
+				    }
+
+				    std::cout<< "The Main Server has sent searching result(s) to client using TCP over port "<< TCPPort << std::endl;
+				    close(new_fd);
+				    exit(0);
+				}
+
+				const void * a = output.c_str();
+				    if (send(new_fd, a, output.length() , 0) == -1){
+				        perror("send");
+				    }
+
+			    std::cout<< "The Main Server has sent error to client using TCP over port "<< TCPPort <<std::endl; 
+			    close(new_fd);
+			    exit(0);
+
+				
+				
+
+			}
+			else{
+				std::cout<< country << " does not show up in A & B " << std::endl;
+				output = country + ": Not found";
+
+				const void * a = output.c_str();
+			    if (send(new_fd, a, output.length() , 0) == -1){
+			        perror("send");
+			    }
+				std::cout<< "The Main Server has sent: " << output<< " to the client  using TCP over port " << TCPPort << std::endl;
+				
+				close(new_fd);
+			    exit(0);
+			}
+
+		    // Send Results to Client
+
+		    close(new_fd);
+		    exit(0);
+
+		}
 
 
 		    // ------------------------------------------------------------------------------------------------
@@ -204,84 +498,7 @@ int main(void){
 
 		    //if Backend Server A
 
-			struct addrinfo hints, *servinfo, *p;
-		    struct sockaddr_storage their_addr; // connector's address information
-		    socklen_t sin_size;
-		    struct sigaction sa;
-		    int yes=1;
-		    int rv;
-
-			memset(&hints, 0, sizeof hints);
-
-
-			hints.ai_family = AF_UNSPEC;
-			
-			hints.ai_socktype = SOCK_DGRAM;
-			
-			hints.ai_flags = AI_PASSIVE; 
-			
-
-
-			rv = getaddrinfo(localhost, APort, &hints, &servinfo);
-
-			if (rv != 0 ) {
-
-				fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-		        return -1;
-			}
-
-			// make a socket:
-
-			for(p = servinfo; p != NULL; p = p->ai_next) {
-		        if ((A_fd= socket(p->ai_family, p->ai_socktype,
-		                p->ai_protocol)) == -1) {
-		            perror("server: socket");
-		            continue;
-		        }
-				break;
-			}
-
-			if( p == NULL){
-
-				fprintf(stderr, "server: failed to bind \n");
-				exit(1);
-			}
-
-
-		    if (sendto(A_fd, buf, numbytes+1 , 0, p->ai_addr, p->ai_addrlen) == -1){
-                perror("sendto 1 ");
-            }
-			
-			freeaddrinfo(servinfo);
-
-            // buf = '';
-            sin_size = sizeof their_addr;
-		    if ((numbytes = recvfrom(udpsock, buf, MAXBUFLEN-1 , 0,
-		        (struct sockaddr *)&their_addr, &sin_size)) == -1) {
-		        perror("recvfrom");
-		        exit(1);
-		    }
-
-		    close(A_fd);
-
-		    buf[numbytes] = '\0';
-
-
-		    // grab results and send to client
-
-
-		    std::string output(buf);
-    		std::string user1 = output.substr(0,output.find(','));
-    		std::string user2 = output.substr(output.find(',')+1);
-		    std::string outuput = user1 + ',' + user2;
-		    const void * a = outuput.c_str();
-		    if (send(new_fd, a, outuput.length() , 0) == -1){
-                perror("send");
-            }
-            close(new_fd);
-            exit(0);
-        }
-        close(new_fd);  // parent doesn't need this
+        // close(new_fd);  // parent doesn't need this
     }
 
     return 0;

@@ -1,13 +1,7 @@
-#include<iostream>
+#include "serverB.h"
 
-#define BACKLOG 10
-#define UDPPort "32484"
-#define APort "30484"
-#define MAXDATASIZE 100
-#define localhost "127.0.0.1"
-#define MAXBUFLEN 100
 
-#include "serverA.h"
+
 
 
 void *get_in_addr(struct sockaddr *sa)
@@ -19,7 +13,8 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int bServerA::FindFriends(int userID, std::string country){
+
+int bServerB::FindFriends(int userID, std::string country){
 
 	int friendSuggestion;
 	int countryidx = c_idx[country];
@@ -59,10 +54,9 @@ int bServerA::FindFriends(int userID, std::string country){
 	}
 
 
-
 	//loop through all possible friends in map
+	std::cout<< "The server B is searching possible friends for User " << userID << std::endl;
 
-	std::cout<< "The server A is searching possible friends for User " << userID << std::endl;
 	std::vector<std::pair<int,int> > all_friendScores;
 	for (unsigned int n_freinds = 0; n_freinds < tempMap.size(); n_freinds++){
 
@@ -103,7 +97,6 @@ int bServerA::FindFriends(int userID, std::string country){
 					max_idx = neighbor;
 				}
 			}
-			
 
 		}
 
@@ -118,8 +111,6 @@ int bServerA::FindFriends(int userID, std::string country){
 		}
 	}
 
-	std::cout<<"Here is the best result: " << friendSuggestion << std::endl;
-
 		//tally similar friends 
 		// save score and id
 	//if no similar friends at all or same amount for top contenders
@@ -130,18 +121,22 @@ int bServerA::FindFriends(int userID, std::string country){
 	//
 	return friendSuggestion;
 }
-int bServerA::SendUDP( std::string msg_in){
+
+int bServerB::SendUDP( std::string msg_in){
 
     const void * msg = msg_in.c_str();
 
     if (sendto(udpsock, msg, msg_in.length() , 0, p->ai_addr, p->ai_addrlen) == -1){
     	perror("send");
     }
+	
 
 	return 0;
 
 
 }
+
+
 int SocketConnection(std::string protocol, const char * Port, bool Server){
 
 	int sockfd;
@@ -229,20 +224,28 @@ int SocketConnection(std::string protocol, const char * Port, bool Server){
 
 }
 
-int** bServerA::CreateAdjacencyMatrix(std::map<int,int> mapID, std::vector<std::vector<int> > vs){
+
+
+int** bServerB::CreateAdjacencyMatrix(std::map<int,int> mapID, std::vector<std::vector<int> > vs){
 
 	int** AdjacencyMatrix = new int* [mapID.size()];
+
+	// std::cout<< "Dimensions of Matrix " << mapID.size() << " x " << mapID.size() << std::endl;
 
 	for( unsigned int column = 0; column < mapID.size() ; column++){
 
 		AdjacencyMatrix[column] = new int [mapID.size()];
 
+		// std::cout<< "User " << column << ": [";
 
 		for( unsigned int row = 0 ; row < mapID.size() ; row++){
 
 			AdjacencyMatrix[column][row] = 0;
 
+			// std::cout<< AdjacencyMatrix[column][row]<< " ";
+
 		}
+		// std::cout<< "]" << std::endl;
 	}
 
 	int column = 0;
@@ -267,7 +270,7 @@ int** bServerA::CreateAdjacencyMatrix(std::map<int,int> mapID, std::vector<std::
 
 }
 
-void bServerA::PrintMatrix(){
+void bServerB::PrintMatrix(){
 
 	std::map<std::string ,int >::iterator it;
 
@@ -275,16 +278,25 @@ void bServerA::PrintMatrix(){
 		for (it = c_idx.begin(); it != c_idx.end(); it++){
 
 			std::cout<< "Country: " << it->first<< std::endl;
+
+			int dimensions = it->second;
+
+			std::cout << "country idx: " << it->second <<std::endl;
 			// int rows = sizeof c_Matrix[i] / sizeof c_Matrix[i][0];
 
-			unsigned int rows = (c_ID_map[it->second])->size();
+			unsigned int rows = (c_ID_map[dimensions])->size();
+
+			std::cout<< "rows: " << rows << std::endl;
+
 
 			for ( unsigned int j= 0 ; j < rows; j++){
 				
 				// int columns = sizeof c_Matrix[i][j] /sizeof c_Matrix[i][j][0];
-				unsigned int columns = (c_ID_map[it->second])->size();
+				unsigned int columns = (c_ID_map[dimensions])->size();
+				std::cout<< "columns: " << columns << std::endl;
+				// std::cout<< "Number of freinds: " << sizeof(*c_Matrix[i][j])<<std::endl;
 
-				std::cout<< "[";
+				std::cout<< "user: " << j<< "[";
 				for ( unsigned int k = 0 ; k < columns; k++){
 
 					std::cout<<" " <<c_Matrix[i][j][k];
@@ -296,7 +308,7 @@ void bServerA::PrintMatrix(){
 		}
 }
 
-void bServerA::LoadDataMap(std::string datatxt){
+void bServerB::LoadDataMap(std::string datatxt){
 
 	std::ifstream input(datatxt);
 	
@@ -399,11 +411,11 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 		int country_num = 0;
 
-
 		for (int i = 0 ; i < c_ID_map.size(); i++){
 
 
 			std::map<int,int> uTm = *(c_ID_map[i]);
+			// std::cout<<"Creating Matrix for country#: " << country_num << std::endl;
 
 			c_Matrix[country_num] = CreateAdjacencyMatrix(uTm, *AllvStreams[country_num]);
 
@@ -423,43 +435,42 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 int main(void){
 	
-	int numbytes, udpsock, Asock;
+	// std::cout<<"Starting Server B \n";
+	int numbytes, udpsock, Bsock;
 	char buf[MAXDATASIZE];  // listen on sock_fd, new connection on new_fd
     struct sigaction sa;
     char s[INET6_ADDRSTRLEN];
     struct sockaddr_storage their_addr; // connector's address information
     socklen_t sin_size;
-    
-    bServerA BSA;
-    // std::cout<<"Loading Data.txt\n";
-    BSA.LoadDataMap("testcases/testcase3/data1.txt");
 
-    // BSA.PrintMatrix();
+    bServerB BSB;
+    // std::cout<<"Loading Data.txt\n";
+    BSB.LoadDataMap("testcases/testcase3/data2.txt");
 
 
 	
     // std::cout<<"starting UDP Socket Connection\n";
-    Asock = SocketConnection("UDP", APort, true);
+    Bsock = SocketConnection("UDP", BPort, true);
 
-    std::cout<<"Server A is up and running on port " << APort<<std::endl;
+    std::cout<<"Server B is up and running on port " << BPort<<std::endl;
     std::map<std::string ,int >::iterator it;
 
     std::string msg_countryList;
-    for ( it = BSA.c_idx.begin() ; it != BSA.c_idx.end(); it++){
+    for ( it = BSB.c_idx.begin() ; it != BSB.c_idx.end(); it++){
 
     	msg_countryList += it->first + "," ;
     }
     msg_countryList.pop_back();
-    // BSA.SendUDP(msg_countryList);
-
     
 
+  	
+    // BSB.PrintMatrix(); -------------------- SEGFAULTS
 
 	while(1){
 
 
 	    sin_size = sizeof their_addr;
-	    if ((numbytes = recvfrom(Asock, buf, MAXBUFLEN-1 , 0,
+	    if ((numbytes = recvfrom(Bsock, buf, MAXBUFLEN-1 , 0,
 	        (struct sockaddr *)&their_addr, &sin_size)) == -1) {
 	        perror("recvfrom");
 	        exit(1);
@@ -474,16 +485,17 @@ int main(void){
 
 		    if(output.compare("-*-") == 0){
 
-		    	BSA.SendUDP(msg_countryList);
-
-		    	std::cout<<"Server A has sent country list to Main Server "<<std::endl;
+		    	BSB.SendUDP(msg_countryList);
+		    	std::cout<<"Server B has sent country list to Main Server "<<std::endl;
 
 		    	exit(0);
 		    }
 
-		    // std::cout<< output<<std::endl;
+
+		    std::cout<< output<<std::endl;
 
 		    std::string user_country = output.substr(0, output.find(',')-1);
+
 
 			std::string tempid= output.substr(output.find(',') + 2, output.size());
 
@@ -491,37 +503,35 @@ int main(void){
 
 		    int friends;
 
-		    std::cout<<"Server A has received request for finding possible friends of User "<< userID << " in " << user_country<<std::endl;
+		    std::cout<<"Server B has received request for finding possible friends of User "<< userID << " in " << user_country<<std::endl;
 
-		    friends = BSA.FindFriends(userID,user_country);
+		    friends = BSB.FindFriends(userID,user_country);
 	   		if( friends == -1){
 	   			std::cout<< "User " <<userID << " does not show up in "<< user_country<<std::endl;
-	   			BSA.SendUDP("-1");
-	   			std::cout<< "The server A has sent 'User "<<userID<< " not found' to MainServer"<<std::endl;
+	   			BSB.SendUDP("-1");
+	   			std::cout<< "The server B has sent 'User "<<userID<< " not found' to MainServer"<<std::endl;
 	   		}
 	   		else if( friends == -2){
 	   			std::cout<< "There are no other people in this map but you"<<std::endl;
-	   			BSA.SendUDP("-2");
-	   			std::cout<< "The server A has sent ' No possible friends' to the Main Server"<<std::endl;
-
+	   			BSB.SendUDP("-2");
+	   			std::cout<< "The server B has sent ' No possible friends' to the Main Server"<<std::endl;
 	   		}
 	   		else if(friends == -3){
 
 	   			std::cout<< "This userID is friends with Everyone!"<<std::endl;
-	   			BSA.SendUDP("-3");
-	   			std::cout<< "The Server A has sent ' No new friends to be made' to the Main Server"<<std::endl;
+	   			BSB.SendUDP("-3");
+	   			std::cout<< "The Server B has sent ' No new friends to be made' to the Main Server"<<std::endl;
 	   		}
 	   		else{
 	   			std::string msg_Results =std::to_string(friends);
 	   			std::cout<< "Recommend new friend " + msg_Results + " to user " << userID << std::endl;
-	   			BSA.SendUDP(msg_Results);
-
-	   			std::cout<< "The server A has sent the results to the Main Server" << std::endl;
+	   			BSB.SendUDP(msg_Results);
 	   		}
 	   		exit(0);
 	    }
+
 	    
-	  
+
 	}
  }
 
