@@ -49,7 +49,6 @@ int client::TCPConnection(){
 
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);
-    // printf("client: connecting to %s\n", s);
 
     
 
@@ -70,7 +69,6 @@ int main(int argc, char *argv[])
     client c1; 
     std::cout<< "The client is up and running. \n"; 
     char buf[MAXDATASIZE];
-    // printf("client: received '%s'\n",buf);
 while(1){
 
         if(c1.TCPConnection() == 0){

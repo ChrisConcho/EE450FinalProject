@@ -72,18 +72,18 @@ int bServerB::FindFriends(int userID, std::string country){
 				}
 			}
 		}
-		// std::cout<< "user: " << n_freinds<< " scored -> " << similarity_score<<std::endl;
+
 		all_friendScores.push_back(std::make_pair(similarity_score,total_friends));
 	}
 	int max = all_friendScores[0].first;
 	int max_idx = 0;
-	// std::cout << "New Max -> " << max_idx << std::endl;
+
 	int contender;
 	for (int neighbor = 0; neighbor < all_friendScores.size(); neighbor++){
 		contender = all_friendScores[neighbor].first;
 
 		if (contender>max){
-			// std::cout << "New Max -> " << neighbor << std::endl;
+
 			max = contender;
 			max_idx = neighbor;
 
@@ -92,7 +92,7 @@ int bServerB::FindFriends(int userID, std::string country){
 		if ( contender == max){
 			if( total_friends == 0){
 				if ( all_friendScores[neighbor].second > all_friendScores[max_idx].second){
-					// std::cout << "New Max -> " << neighbor << std::endl;
+
 					max = contender;
 					max_idx = neighbor;
 				}
@@ -111,14 +111,6 @@ int bServerB::FindFriends(int userID, std::string country){
 		}
 	}
 
-		//tally similar friends 
-		// save score and id
-	//if no similar friends at all or same amount for top contenders
-		//return user with most friends in general
-			//tieBreak: return user with smaller ID
-		//
-		//save a visted 
-	//
 	return friendSuggestion;
 }
 
@@ -179,7 +171,6 @@ int SocketConnection(std::string protocol, const char * Port, bool Server){
         return -1;
 	}
 
-	// make a socket:
 
 	for(p = servinfo; p != NULL; p = p->ai_next) {
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
@@ -230,22 +221,18 @@ int** bServerB::CreateAdjacencyMatrix(std::map<int,int> mapID, std::vector<std::
 
 	int** AdjacencyMatrix = new int* [mapID.size()];
 
-	// std::cout<< "Dimensions of Matrix " << mapID.size() << " x " << mapID.size() << std::endl;
 
 	for( unsigned int column = 0; column < mapID.size() ; column++){
 
 		AdjacencyMatrix[column] = new int [mapID.size()];
 
-		// std::cout<< "User " << column << ": [";
 
 		for( unsigned int row = 0 ; row < mapID.size() ; row++){
 
 			AdjacencyMatrix[column][row] = 0;
 
-			// std::cout<< AdjacencyMatrix[column][row]<< " ";
 
 		}
-		// std::cout<< "]" << std::endl;
 	}
 
 	int column = 0;
@@ -282,7 +269,6 @@ void bServerB::PrintMatrix(){
 			int dimensions = it->second;
 
 			std::cout << "country idx: " << it->second <<std::endl;
-			// int rows = sizeof c_Matrix[i] / sizeof c_Matrix[i][0];
 
 			unsigned int rows = (c_ID_map[dimensions])->size();
 
@@ -291,10 +277,8 @@ void bServerB::PrintMatrix(){
 
 			for ( unsigned int j= 0 ; j < rows; j++){
 				
-				// int columns = sizeof c_Matrix[i][j] /sizeof c_Matrix[i][j][0];
 				unsigned int columns = (c_ID_map[dimensions])->size();
 				std::cout<< "columns: " << columns << std::endl;
-				// std::cout<< "Number of freinds: " << sizeof(*c_Matrix[i][j])<<std::endl;
 
 				std::cout<< "user: " << j<< "[";
 				for ( unsigned int k = 0 ; k < columns; k++){
@@ -342,7 +326,6 @@ void bServerB::LoadDataMap(std::string datatxt){
 				
 				(*userToMatrix)[userID] = re_idx;
 
-				// std::cout<< "[" <<userID << "   ->   " <<re_idx <<" ]"<< std::endl;
 				re_idx++;
 
 				int temp;
@@ -371,9 +354,6 @@ void bServerB::LoadDataMap(std::string datatxt){
 
 					AllvStreams.push_back(countryStreams);
 
-					//AllMatrices[countriesVect.size()] = CreateAdjacencyMatrix(*userToMatrix, vstreams);
-
-					//vstreams.clear();
 
 					userToMatrix = new std::map<int,int>;
 
@@ -387,7 +367,6 @@ void bServerB::LoadDataMap(std::string datatxt){
 
 				}
 				currentCountry = line;
-				// std::cout<< "Re-Index Map of " << line << " User ID's" << std::endl;
 
 			}
 
@@ -401,9 +380,6 @@ void bServerB::LoadDataMap(std::string datatxt){
 
 			AllvStreams.push_back(countryStreams);
 
-			//AllMatrices[countriesVect.size()] = CreateAdjacencyMatrix(*userToMatrix, vstreams);
-
-			//vstreams.clear();
 		}
 
 
@@ -415,7 +391,6 @@ void bServerB::LoadDataMap(std::string datatxt){
 
 
 			std::map<int,int> uTm = *(c_ID_map[i]);
-			// std::cout<<"Creating Matrix for country#: " << country_num << std::endl;
 
 			c_Matrix[country_num] = CreateAdjacencyMatrix(uTm, *AllvStreams[country_num]);
 
@@ -435,7 +410,6 @@ void bServerB::LoadDataMap(std::string datatxt){
 
 int main(void){
 	
-	// std::cout<<"Starting Server B \n";
 	int numbytes, udpsock, Bsock;
 	char buf[MAXDATASIZE];  // listen on sock_fd, new connection on new_fd
     struct sigaction sa;
@@ -444,12 +418,8 @@ int main(void){
     socklen_t sin_size;
 
     bServerB BSB;
-    // std::cout<<"Loading Data.txt\n";
     BSB.LoadDataMap("testcases/testcase3/data2.txt");
 
-
-	
-    // std::cout<<"starting UDP Socket Connection\n";
     Bsock = SocketConnection("UDP", BPort, true);
 
     std::cout<<"Server B is up and running on port " << BPort<<std::endl;
@@ -463,9 +433,6 @@ int main(void){
     msg_countryList.pop_back();
     
 
-  	
-    // BSB.PrintMatrix(); -------------------- SEGFAULTS
-
 	while(1){
 
 
@@ -478,7 +445,6 @@ int main(void){
 
 	    if(!fork()){
 	    	buf[numbytes] = '\0';
-		    // printf("listener: packet contains \"%s\"\n", buf);
 
 
 		    std::string output(buf);

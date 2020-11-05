@@ -78,18 +78,15 @@ int bServerA::FindFriends(int userID, std::string country){
 				}
 			}
 		}
-		// std::cout<< "user: " << n_freinds<< " scored -> " << similarity_score<<std::endl;
 		all_friendScores.push_back(std::make_pair(similarity_score,total_friends));
 	}
 	int max = all_friendScores[0].first;
 	int max_idx = 0;
-	// std::cout << "New Max -> " << max_idx << std::endl;
 	int contender;
 	for (int neighbor = 0; neighbor < all_friendScores.size(); neighbor++){
 		contender = all_friendScores[neighbor].first;
 
 		if (contender>max){
-			// std::cout << "New Max -> " << neighbor << std::endl;
 			max = contender;
 			max_idx = neighbor;
 
@@ -98,7 +95,6 @@ int bServerA::FindFriends(int userID, std::string country){
 		if ( contender == max){
 			if( total_friends == 0){
 				if ( all_friendScores[neighbor].second > all_friendScores[max_idx].second){
-					// std::cout << "New Max -> " << neighbor << std::endl;
 					max = contender;
 					max_idx = neighbor;
 				}
@@ -120,14 +116,6 @@ int bServerA::FindFriends(int userID, std::string country){
 
 	std::cout<<"Here is the best result: " << friendSuggestion << std::endl;
 
-		//tally similar friends 
-		// save score and id
-	//if no similar friends at all or same amount for top contenders
-		//return user with most friends in general
-			//tieBreak: return user with smaller ID
-		//
-		//save a visted 
-	//
 	return friendSuggestion;
 }
 int bServerA::SendUDP( std::string msg_in){
@@ -275,13 +263,11 @@ void bServerA::PrintMatrix(){
 		for (it = c_idx.begin(); it != c_idx.end(); it++){
 
 			std::cout<< "Country: " << it->first<< std::endl;
-			// int rows = sizeof c_Matrix[i] / sizeof c_Matrix[i][0];
 
 			unsigned int rows = (c_ID_map[it->second])->size();
 
 			for ( unsigned int j= 0 ; j < rows; j++){
 				
-				// int columns = sizeof c_Matrix[i][j] /sizeof c_Matrix[i][j][0];
 				unsigned int columns = (c_ID_map[it->second])->size();
 
 				std::cout<< "[";
@@ -330,7 +316,6 @@ void bServerA::LoadDataMap(std::string datatxt){
 				
 				(*userToMatrix)[userID] = re_idx;
 
-				// std::cout<< "[" <<userID << "   ->   " <<re_idx <<" ]"<< std::endl;
 				re_idx++;
 
 				int temp;
@@ -359,10 +344,6 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 					AllvStreams.push_back(countryStreams);
 
-					//AllMatrices[countriesVect.size()] = CreateAdjacencyMatrix(*userToMatrix, vstreams);
-
-					//vstreams.clear();
-
 					userToMatrix = new std::map<int,int>;
 
 					countryStreams = new std::vector<std::vector<int> >;
@@ -375,7 +356,6 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 				}
 				currentCountry = line;
-				// std::cout<< "Re-Index Map of " << line << " User ID's" << std::endl;
 
 			}
 
@@ -389,9 +369,6 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 			AllvStreams.push_back(countryStreams);
 
-			//AllMatrices[countriesVect.size()] = CreateAdjacencyMatrix(*userToMatrix, vstreams);
-
-			//vstreams.clear();
 		}
 
 
@@ -431,14 +408,9 @@ int main(void){
     socklen_t sin_size;
     
     bServerA BSA;
-    // std::cout<<"Loading Data.txt\n";
+
     BSA.LoadDataMap("testcases/testcase3/data1.txt");
 
-    // BSA.PrintMatrix();
-
-
-	
-    // std::cout<<"starting UDP Socket Connection\n";
     Asock = SocketConnection("UDP", APort, true);
 
     std::cout<<"Server A is up and running on port " << APort<<std::endl;
@@ -450,8 +422,6 @@ int main(void){
     	msg_countryList += it->first + "," ;
     }
     msg_countryList.pop_back();
-    // BSA.SendUDP(msg_countryList);
-
     
 
 
@@ -467,8 +437,6 @@ int main(void){
 
 	    if(!fork()){
 	    	buf[numbytes] = '\0';
-		    // printf("listener: packet contains \"%s\"\n", buf);
-
 
 		    std::string output(buf);
 
@@ -480,8 +448,6 @@ int main(void){
 
 		    	exit(0);
 		    }
-
-		    // std::cout<< output<<std::endl;
 
 		    std::string user_country = output.substr(0, output.find(',')-1);
 

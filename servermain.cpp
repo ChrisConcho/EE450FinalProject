@@ -11,7 +11,6 @@
 
 void sigchld_handler(int s)
 {
-    // waitpid() might overwrite errno, so we save and restore it:
     int saved_errno = errno;
 
     while(waitpid(-1, NULL, WNOHANG) > 0);
@@ -61,7 +60,6 @@ void serverMain::UDPConnections(int backendServer){
        
 	}
 
-	// make a socket:
 	if(backendServer == 1){
 
 		for(pA = servinfoA; pA != NULL; pA = pA->ai_next) {
@@ -119,7 +117,6 @@ void serverMain::SendAndRcv(int send, int backendServer, char buf[]){
 
 			if (sendto(Asock, buf, MAXBUFLEN , 0, pA->ai_addr, pA->ai_addrlen) == -1){
 			    perror("sendto 1 ");
-			    // exit(1);
 			}
 		}
 
@@ -129,7 +126,6 @@ void serverMain::SendAndRcv(int send, int backendServer, char buf[]){
 			
 			if (sendto(Bsock, buf, MAXBUFLEN , 0, pB->ai_addr, pB->ai_addrlen) == -1){
 				    perror("sendto 1 ");
-				    // exit(1);
 			}
 
 		}
@@ -137,19 +133,13 @@ void serverMain::SendAndRcv(int send, int backendServer, char buf[]){
 	}
 
 	memset(buf,0, sizeof *buf);
-	
-	// char temp[MAXBUFLEN];
-
-    // buf = '';
 
 
 	sin_size = sizeof their_addr;
 
-	// std::cout<< "Waiting to recv message"<< std::endl;
     if ((numbytes = recvfrom(udpsock, buf, MAXBUFLEN-1 , 0,
         (struct sockaddr *)&their_addr, &sin_size)) == -1) {
         perror("recvfrom");
-        // exit(1);
     }
     if( backendServer == 1){
     	close(Asock);
@@ -277,9 +267,6 @@ int main(void){
     }
 
     std::cout<< "The Main Server is up and running" << std::endl;
-    // if ( SM.SocketConnection("UDP", UDPPort, true) != 0) {
-    // 	std::cout<< "An Error has occured in the allocating a UDP socket"<<std::endl;
-    // }
 
 	sa.sa_handler = sigchld_handler; // reap all dead processes
     sigemptyset(&sa.sa_mask);
@@ -349,13 +336,11 @@ int main(void){
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
 
-        // printf("server: got connection from %s\n", s);
 
         if (!fork()) { // this is the child process
 
             close(SM.sockfd); // child doesn't need the listener
             
-            // char buf_msg[MAXBUFLEN] = buf;
             memset(buf,0, sizeof *buf);
 
             if (send(new_fd, "Hello, world!", 13, 0) == -1){
@@ -367,15 +352,12 @@ int main(void){
 		        exit(1);
 		    }
 		    buf[numbytes] = '\0';
-		    // printf("server: received '%s'\n",buf);
 
 		    //Received Query!
 
 		    //Check if valid and who to send to
 		    
 		    std::string output(buf);
-
-		    // std::cout<< output<<std::endl;
 
 		    std::string country = output.substr(0, output.find(',')-1);
 
@@ -393,9 +375,6 @@ int main(void){
 
 				int BackServer = SM.allCountries[country];
 				std::stringstream ss;
-				// std::cout<< "FOUND COUNTRY going to send query to Server: " << BackServer << std::endl;
-				
-				// memset(buf,0, sizeof *buf);
 
 				SM.SendAndRcv(1, BackServer, buf);
 				std::string serverString;
@@ -414,7 +393,6 @@ int main(void){
 				
 				std::string temp(buf);
 				bool flag = true;
-				// std::cout<<"Msg From BackendServer: " + temp<<std::endl; //-----------------FLAG
 				if (temp.compare("-1") == 0){
 
 					std::cout<< "The Main Server has received 'User ID: Not found' from server "<<serverString<<std::endl;
@@ -484,32 +462,9 @@ int main(void){
 
 		}
 
-
-		    // ------------------------------------------------------------------------------------------------
-
-		    // We have succefully set up a TCP connection with the client.
-
-		    // Check if valid inputs
-
-		    // decide which server to go to
-
-		    // make UDP connection with server
-
-
-		    //if Backend Server A
-
-        // close(new_fd);  // parent doesn't need this
     }
 
     return 0;
 }
-	// listen(sockfd, BACKLOG);
-
-	// // connect!
-	// addr_size = sizeof(their_addr);
-	// new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
-
-
-	// connect(sockfd, res->ai_addr, res->ai_addrlen);
 
 

@@ -18,13 +18,6 @@
 #include <map>
 
 
-    // std::vector<std::vector> matrix;
-
-    // map called countryToIDs
-    // NEED TO DELETE All uTm's in countryToIDs		XXXX
-    // NEED TO DELETE All Arrays in Adjacency Matrix
-
-    // map called country to Adjacency Matrix
 
 class bServerA{
 
