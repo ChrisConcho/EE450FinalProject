@@ -294,14 +294,14 @@ int main(void){
 	char msgA[100];
 	std::string Startup = "-*-";
 
-	std::strcpy(msgA ,Startup.c_str());
+	strcpy(msgA ,Startup.c_str());
 	SM.SendAndRcv(1,1, msgA);
 
 	std::cout<< "The Main Server has received the country list from Server A using UDP over port " << UDPPort << std::endl;
 	std::string outputA(msgA);
 
 	char msgB[100];
-	std::strcpy(msgB ,Startup.c_str());
+	strcpy(msgB ,Startup.c_str());
 	SM.SendAndRcv(1,2, msgB);
 
 	std::cout<< "The Main Server has received the country list from Server B using UDP over port " << UDPPort << std::endl;
