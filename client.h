@@ -10,6 +10,7 @@
 #include <string>
 #include <iostream>
 #include <arpa/inet.h>
+#include <string.h>
 
 #define PORT "33484" // the port client will be connecting to 
 #define localhost "127.0.0.1"

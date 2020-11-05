@@ -1,5 +1,73 @@
 # EE450FinalProject
 
+
+#Christian Concho
+USCID: 1188708484
+#Abstract
+
+This project is a client communicating with a main server over TCP. The client sends a query that the main server will determine one of two backend servers to communicate with to determine the result over  UDP 
+
+#File Details
+client.h
+	Holds information used in the TCP connections and a function to connect.
+
+client.cpp
+	Responsible for grabbing user input in order to create a query.
+	Sends and Recieves messages over TCP  with mainserver
+
+servermain.h
+	SendAndRcv: sends and receives messages from backend server over UDP 
+	UDPConnections: establishes the connection with the requested backend server (outgoing messages)
+	SocketConnection: Creates sockets dedicated to listen on UDP port and TCP port (incoming messages)
+	allCountries: responsible for mapping countries to the respected backend server
+
+servermain.cpp
+	Listens on TCP port for incoming client connections.
+	Creates thread for child to help clients and resume back to listening on port.
+	Child communicates queries from client to the respective backend server and forwards the results back to the client.
+
+serverA.h and serverB.h
+	c_ID_map: holds each map of userID's to re-indexed userID's for each country in a vector
+	c_idx: maps country to the index on c_ID_map
+	c_Matrix: 3D int array. 
+		D1: country
+		D2: user's freinds 
+		D3: relation of neighbor to the user
+		ex. user Chris and user Max live in country Canada
+			c_Matrix[canada][Chris][Max] = 1 -> Chris and Max are friends in Canada.
+			user i and user j live in country k
+			c_Matrix[k][i][j] = 0 -> i and j are not friends in k.
+	LoadData: parse data.txt to re-index user ID's and create Friend Relation Matrix (c_Matrix)
+	SendUDP: Send a msg (the results) over UDP  to the main server (outgoing messages)
+	FindFriends: Determines the best possible neighbor based on common friends.
+	Constructor: Creates sockets for UDP connections to send messages to the main server
+	Destructor: Free all allocated data needed to create c_Matrix and c_ID_map and close sockets.
+serverA.cpp and serverB.cpp
+	Establishes socket connection to listen on a dedicated port for all incoming queries from the main server
+	listens on UDP port and creates a child to handle all main server queries
+	Determines the best possible friend for the userID corresponding to the country they live in
+	Returns the results over UDP to the main server
+
+
+
+#How to send a query via client
+
+You will be asked to put in your user ID and country. The user ID must come first followed by a single space then the country name. No spaces afterwards are allowed. Only the one space in between. No commas or characters in betweeen. 
+
+#References:
+	TCP and UDP connection code was inspired form http://www.beej.us/guide/bgnet/html/.
+
+
+
+
+
+
+
+
+
+#MORE DETAILED DESCRIPTION BELOW
+
+
 # ---------- Backend Server A/B ------------- server#.cpp server#.h -> # = A or B
 
 # have at most 10 countries that are only in letters 

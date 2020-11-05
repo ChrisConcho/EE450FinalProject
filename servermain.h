@@ -25,13 +25,16 @@ class serverMain {
 
 			freeaddrinfo(servinfoA);
 			freeaddrinfo(servinfoB);
+			close(sockfd);
 		}
+		std::map<std::string, int> allCountries;
+
 		void SendAndRcv(int send, int backendServer, char buf[]);
 		void UDPConnections(int backendServer);
 		int SocketConnection(std::string protocol, const char * Port, bool Server);
 		int sockfd;
 		int udpsock;
-		std::map<std::string, int> allCountries;
+		
 
 		int Asock, Bsock;
 		struct addrinfo hints, *servinfoA, *servinfoB, *pA, *pB;
