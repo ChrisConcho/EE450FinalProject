@@ -301,8 +301,6 @@ void bServerA::LoadDataMap(std::string datatxt){
 		std::string currentCountry;
 		while(getline(input,line)){
 
-
-
 			// we find a new row of user + friends
 			if(std::isdigit(line.front())){
 
@@ -376,7 +374,6 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 		int country_num = 0;
 
-
 		for (int i = 0 ; i < c_ID_map.size(); i++){
 
 
@@ -388,12 +385,8 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 			country_num++;
 		}
-		//finsihed going through all the data
-
-		
-		
+		//finsihed going through all the data		
 	}
-
 
 }
 
@@ -409,7 +402,7 @@ int main(void){
     
     bServerA BSA;
 
-    BSA.LoadDataMap("testcases/testcase3/data1.txt");
+    BSA.LoadDataMap("testcases/testcase1/data1.txt");
 
     Asock = SocketConnection("UDP", APort, true);
 

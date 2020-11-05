@@ -53,6 +53,9 @@ serverA.cpp and serverB.cpp
 #How to send a query via client
 
 You will be asked to put in your user ID and country. The user ID must come first followed by a single space then the country name. No spaces afterwards are allowed. Only the one space in between. No commas or characters in betweeen. 
+#How to change data.txt
+On serverA.cpp AND serverB.cpp Line 405 you must changes the paramter for the function LoadDataMap. It is currently "testcases/testcase1/data1.txt" and if you wish to continue using this format, put the create a new testX folder to hold the data1.txt and data2.txt and add this into the testcases folder. 
+Make sure you change Both files serverA.cpp and serverB.cpp to get the correct resutls. 
 
 #References:
 	TCP and UDP connection code was inspired form http://www.beej.us/guide/bgnet/html/.

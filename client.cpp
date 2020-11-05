@@ -86,7 +86,7 @@ while(1){
                         perror("send");
                     }
 
-            std::cout<< "The client has sent User "<<userID <<" and "<<countryName<<" to Main Server using TCP" << std::endl;
+            std::cout<< std::endl<<"The client has sent User "<<userID <<" and "<<countryName<<" to Main Server using TCP" << std::endl;
             if ((numbytes = recv(c1.sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
                 perror("recv");
                 exit(1);
@@ -94,6 +94,7 @@ while(1){
 
             buf[numbytes] = '\0';
             std::string output(buf);
+            std::cout<<std::endl;
             std::cout<< output << std::endl;
             close(c1.sockfd);
 

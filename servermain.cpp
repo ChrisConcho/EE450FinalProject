@@ -396,16 +396,16 @@ int main(void){
 				if (temp.compare("-1") == 0){
 
 					std::cout<< "The Main Server has received 'User ID: Not found' from server "<<serverString<<std::endl;
-					output = "User " + tempid + "not found";
+					output = "User " + tempid + " not found";
 
 				}
 
 				else if (temp.compare("-2") == 0){
-					output = "There are no other Users in this Country";
+					output = tempid+ " is the ONLY user in " + country;
 				}
 
 				else if (temp.compare("-3") == 0){
-					output = "You are already Friends with Every User!";
+					output = tempid+ " is already connected to all other users, no new recommendation";
 				}
 
 				else{
@@ -424,6 +424,7 @@ int main(void){
 				    }
 
 				    std::cout<< "The Main Server has sent searching result(s) to client using TCP over port "<< TCPPort << std::endl;
+				    std::cout<<std::endl;
 				    close(new_fd);
 				    exit(0);
 				}
@@ -434,6 +435,7 @@ int main(void){
 				    }
 
 			    std::cout<< "The Main Server has sent error to client using TCP over port "<< TCPPort <<std::endl; 
+			    std::cout<<std::endl;
 			    close(new_fd);
 			    exit(0);
 
@@ -450,6 +452,7 @@ int main(void){
 			        perror("send");
 			    }
 				std::cout<< "The Main Server has sent: " << output<< " to the client  using TCP over port " << TCPPort << std::endl;
+				std::cout<<std::endl;
 				
 				close(new_fd);
 			    exit(0);

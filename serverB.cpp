@@ -310,12 +310,8 @@ void bServerB::LoadDataMap(std::string datatxt){
 		std::map<int,int>* userToMatrix = new std::map<int,int>;
 		std::string currentCountry;
 		while(getline(input,line)){
-
-
-
 			// we find a new row of user + friends
 			if(std::isdigit(line.front())){
-
 
 				std::stringstream ss;
 				int userID;
@@ -337,12 +333,9 @@ void bServerB::LoadDataMap(std::string datatxt){
 				}
 
 				countryStreams->push_back(row);
-
-
 			}
 
 			else{
-
 
 				if(started){
 
@@ -367,7 +360,6 @@ void bServerB::LoadDataMap(std::string datatxt){
 
 				}
 				currentCountry = line;
-
 			}
 
 		}
@@ -381,14 +373,11 @@ void bServerB::LoadDataMap(std::string datatxt){
 			AllvStreams.push_back(countryStreams);
 
 		}
-
-
 		c_Matrix = new int**[c_ID_map.size()];
 
 		int country_num = 0;
 
 		for (int i = 0 ; i < c_ID_map.size(); i++){
-
 
 			std::map<int,int> uTm = *(c_ID_map[i]);
 
@@ -399,12 +388,7 @@ void bServerB::LoadDataMap(std::string datatxt){
 			country_num++;
 		}
 		//finsihed going through all the data
-
-		
-		
 	}
-
-
 }
 
 
@@ -418,7 +402,7 @@ int main(void){
     socklen_t sin_size;
 
     bServerB BSB;
-    BSB.LoadDataMap("testcases/testcase3/data2.txt");
+    BSB.LoadDataMap("testcases/testcase1/data2.txt");
 
     Bsock = SocketConnection("UDP", BPort, true);
 
@@ -492,6 +476,8 @@ int main(void){
 	   			std::string msg_Results =std::to_string(friends);
 	   			std::cout<< "Recommend new friend " + msg_Results + " to user " << userID << std::endl;
 	   			BSB.SendUDP(msg_Results);
+
+	   			std::cout<< "The server B has sent the results to the Main Server" << std::endl;
 	   		}
 	   		exit(0);
 	    }
