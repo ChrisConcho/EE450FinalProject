@@ -50,16 +50,28 @@ serverA.cpp and serverB.cpp
 
 
 
+#Bootup
+$ make all
+$ make serverA
+$ make serverB
+$ make servermain
+$ ./client
+
+
+
 #How to send a query via client
 
 You will be asked to put in your user ID and country. The user ID must come first followed by a single space then the country name. No spaces afterwards are allowed. Only the one space in between. No commas or characters in betweeen. 
+
 #How to change data.txt
-On serverA.cpp AND serverB.cpp Line 405 you must changes the paramter for the function LoadDataMap. It is currently "testcases/testcase1/data1.txt" and if you wish to continue using this format, put the create a new testX folder to hold the data1.txt and data2.txt and add this into the testcases folder. 
+On serverA.cpp AND serverB.cpp in int main() you must changes the paramter for the function LoadDataMap. It is currently "testcases/testcase1/data1.txt" and if you wish to continue using this format, put the create a new testX folder to hold the data1.txt and data2.txt and add this into the testcases folder. 
 Make sure you change Both files serverA.cpp and serverB.cpp to get the correct resutls. 
 
+#Comments
+There are detailed comments on serverB.cpp, servermain.cpp, and client.cpp
+serverA.cpp is similar to serverB.cpp so refer to that if needed. 
 #References:
 	TCP and UDP connection code was inspired form http://www.beej.us/guide/bgnet/html/.
-
 
 
 
@@ -73,45 +85,45 @@ Make sure you change Both files serverA.cpp and serverB.cpp to get the correct r
 
 # ---------- Backend Server A/B ------------- server#.cpp server#.h -> # = A or B
 
-# have at most 10 countries that are only in letters 
-	#- read in line from data1.txt and check for letter to create new country
-# read in id of user then there will be a space to seperate from its corresponding neighbors
-	# - keep storing neighbors until we hit a new line character \n
-# store each country in a Map such as adjacency matrix, adjacency list or Compressed Sparse Row (CSR) format
+have at most 10 countries that are only in letters 
+	- read in line from data1.txt and check for letter to create new country
+read in id of user then there will be a space to seperate from its corresponding neighbors
+	 - keep storing neighbors until we hit a new line character \n
+store each country in a Map such as adjacency matrix, adjacency list or Compressed Sparse Row (CSR) format
 
-#recieving child process of main server query request check the following conditions
-# is the user already connected to every other user -> return None
-# is the user the only user in the map -> return None
-# for every user (n)  NOT connected to the user check how many freinds they have in common
-	# Prof. recommends using a set to find number of common neighbors
-# if each n not connected to user (u) has no common friends recommend the n with the most friends
-	# Tie breaker: multiple n's with same number of freinds then return the smallest ID (top of the matrix)
-# recommend the n with the most friends in common with u
-	# Tie breaker: same as previous tie breaker
-# result sent back to main server using UDP connection
+recieving child process of main server query request check the following conditions
+is the user already connected to every other user -> return None
+is the user the only user in the map -> return None
+for every user (n)  NOT connected to the user check how many freinds they have in common
+	 Prof. recommends using a set to find number of common neighbors
+if each n not connected to user (u) has no common friends recommend the n with the most friends
+	- Tie breaker: multiple n's with same number of freinds then return the smallest ID (top of the matrix)
+recommend the n with the most friends in common with u
+	- Tie breaker: same as previous tie breaker
+result sent back to main server using UDP connection
 
 #UDP A port: 30484 
 #UDP B port: 31484
 
 # --------- Main Server ----------------------- servermain.cpp servermain.h
 
-# create Server A and Server B
-# have them read their data1.txts
-# have them return which countries they are responsible for 
-# use unordered map to store which countries belong to which server for fast access
-# listen for client socket connections
-# accept client socket connection and fork()
+create Server A and Server B
+have them read their data1.txts
+have them return which countries they are responsible for 
+use unordered map to store which countries belong to which server for fast access
+listen for client socket connections
+accept client socket connection and fork()
 
-# check if country or user id or not found then print out a message 
-# assign the correct backend server to find recommended user via UDP connection
-# Send result back to client via a TCP connection
+check if country or user id or not found then print out a message 
+assign the correct backend server to find recommended user via UDP connection
+Send result back to client via a TCP connection
 
 #UDP Port: 32484
 #TCP Port: 33484
 
 # ---------- Client -------------- client.cpp client.h
 
-# on boot up ask client "Enter Country Name: " and " Enter User ID: "
-# establish a TCP socket connection with the Main Server.
-# listen for response (from child of main server) and print out message
-# Immediately print( "-----Start a new request-----") and start again from the top
+on boot up ask client "Enter Country Name: " and " Enter User ID: "
+establish a TCP socket connection with the Main Server.
+listen for response (from child of main server) and print out message
+Immediately print( "-----Start a new request-----") and start again from the top

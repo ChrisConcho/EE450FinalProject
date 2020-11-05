@@ -26,6 +26,8 @@ class bServerA{
 		std::vector<std::map<int,int>* > c_ID_map;
 
 		std::map<std::string, int> c_idx;
+
+		std::vector<std::map<int,int>*> ridx_id_map;
     	
     	int*** c_Matrix;
 
@@ -90,6 +92,8 @@ class bServerA{
 				for (int i = 0 ; i < c_ID_map.size() ; i++){
 
 					delete c_ID_map[i];
+
+					delete ridx_id_map[i];
 
 				}
 

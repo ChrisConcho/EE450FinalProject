@@ -19,12 +19,16 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+
 int bServerA::FindFriends(int userID, std::string country){
 
+
+	// this wil be our solution we return
 	int friendSuggestion;
 	int countryidx = c_idx[country];
 	//check if user exists in country
 	std::map<int,int> tempMap = *c_ID_map[countryidx];
+	std::map<int,int> trueID = *ridx_id_map[countryidx];
 
 	if(tempMap.find(userID) == tempMap.end() ){
 		// -1 means no userid  in map
@@ -38,14 +42,16 @@ int bServerA::FindFriends(int userID, std::string country){
 	int* user_friends = c_Matrix[idx][newidx];
 
 
-	
-	//loop through once to see if they are friends with everyone
-		//return none if true
-	int total_friends =  0;
 	if(tempMap.size() == 1){
 		//The only user in this map
 		return -2;
 	}
+
+
+
+	int total_friends =  0;
+
+	//loop through once to see if they are friends with everyone
 	for( unsigned int j = 0 ; j < tempMap.size(); j++){
 
 		if ( user_friends[j] == 1){
@@ -59,65 +65,71 @@ int bServerA::FindFriends(int userID, std::string country){
 	}
 
 
-
 	//loop through all possible friends in map
-
 	std::cout<< "The server A is searching possible friends for User " << userID << std::endl;
+
 	std::vector<std::pair<int,int> > all_friendScores;
 	for (unsigned int n_freinds = 0; n_freinds < tempMap.size(); n_freinds++){
 
 		int similarity_score = 0;
 		int total_friends = 0;
+		//check if the neigbor is themself and that they are not already friends
 		if (n_freinds != newidx && user_friends[n_freinds] != 1){
+			//loop through friends list to see similarity score
 			for( unsigned int j = 0 ; j < tempMap.size(); j++){
 				if(c_Matrix[idx][n_freinds][j] == 1){
 					if(user_friends[j]==1){
+						//both have the same friend
 						similarity_score++;
 					}
+					//keep track of total friends for tie breaks scenario
 					total_friends++;
 				}
 			}
 		}
+		//add possible friends to a vector so we can compare later
 		all_friendScores.push_back(std::make_pair(similarity_score,total_friends));
 	}
+	//set max to first user for initialization
+
 	int max = all_friendScores[0].first;
 	int max_idx = 0;
+
 	int contender;
+	// loop through all possible friends and evaluate best option with similarity scores calculated.
 	for (int neighbor = 0; neighbor < all_friendScores.size(); neighbor++){
 		contender = all_friendScores[neighbor].first;
-
+		
+		//compare similarity score
 		if (contender>max){
 			max = contender;
 			max_idx = neighbor;
-
 		}
-
+		// tie breaker on same scores
 		if ( contender == max){
+			//if client has No friends then we compare who has most total friends
 			if( total_friends == 0){
 				if ( all_friendScores[neighbor].second > all_friendScores[max_idx].second){
+
 					max = contender;
 					max_idx = neighbor;
 				}
 			}
-			
+			//otherise we check who has the smaller original id
+			else{
+				if( trueID[max_idx] > trueID[neighbor]){
+					max = contender;
+					max_idx = neighbor;
+				}
+			}
 
 		}
-
-
 	}
-	std::map<int,int>::iterator it;
-
-	for ( it = tempMap.begin(); it != tempMap.end(); it++){
-		if (it->second == max_idx){
-			friendSuggestion = it->first;
-			break;
-		}
-	}
-
-	std::cout<<"Here is the best result: " << friendSuggestion << std::endl;
-
+	//return the neigbor's original id to the client.
+	friendSuggestion = trueID[max_idx];
 	return friendSuggestion;
 }
+
 int bServerA::SendUDP( std::string msg_in){
 
     const void * msg = msg_in.c_str();
@@ -158,12 +170,14 @@ int SocketConnection(std::string protocol, const char * Port, bool Server){
 	hints.ai_flags = AI_PASSIVE; 
 	
 	const char * ipDest;
+	
 	if(Server == true){
 		ipDest = NULL;
 	}
 	if( Server == false){
 		ipDest = localhost;
 	}
+	
 	rv = getaddrinfo(ipDest, Port, &hints, &servinfo);
 
 	if (rv != 0 ) {
@@ -295,15 +309,17 @@ void bServerA::LoadDataMap(std::string datatxt){
 		int re_idx = 0;
 		int total_countries = 0;
 		std::string line;
+		
 		std::vector<std::vector<std::vector<int> >* > AllvStreams;
 		std::vector<std::vector<int> >* countryStreams = new std::vector<std::vector<int> >;
+		
 		std::map<int,int>* userToMatrix = new std::map<int,int>;
+		std::map<int,int>* reIndexToOG = new std:: map <int, int>;
+		
 		std::string currentCountry;
 		while(getline(input,line)){
-
 			// we find a new row of user + friends
 			if(std::isdigit(line.front())){
-
 
 				std::stringstream ss;
 				int userID;
@@ -313,6 +329,7 @@ void bServerA::LoadDataMap(std::string datatxt){
 				ss>>userID;
 				
 				(*userToMatrix)[userID] = re_idx;
+				(*reIndexToOG)[re_idx] = userID;
 
 				re_idx++;
 
@@ -325,16 +342,15 @@ void bServerA::LoadDataMap(std::string datatxt){
 				}
 
 				countryStreams->push_back(row);
-
-
 			}
 
 			else{
 
-
 				if(started){
 
 					c_ID_map.push_back(userToMatrix);
+
+					ridx_id_map.push_back(reIndexToOG);
 
 					c_idx[currentCountry] = total_countries;
 
@@ -342,7 +358,10 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 					AllvStreams.push_back(countryStreams);
 
+
 					userToMatrix = new std::map<int,int>;
+
+					reIndexToOG = new std:: map <int, int>;
 
 					countryStreams = new std::vector<std::vector<int> >;
 					re_idx = 0;
@@ -354,7 +373,6 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 				}
 				currentCountry = line;
-
 			}
 
 		}
@@ -363,19 +381,18 @@ void bServerA::LoadDataMap(std::string datatxt){
 
 			c_ID_map.push_back(userToMatrix);
 
+			ridx_id_map.push_back(reIndexToOG);
+
 			c_idx[currentCountry] = total_countries;
 
 			AllvStreams.push_back(countryStreams);
 
 		}
-
-
 		c_Matrix = new int**[c_ID_map.size()];
 
 		int country_num = 0;
 
 		for (int i = 0 ; i < c_ID_map.size(); i++){
-
 
 			std::map<int,int> uTm = *(c_ID_map[i]);
 
@@ -402,7 +419,7 @@ int main(void){
     
     bServerA BSA;
 
-    BSA.LoadDataMap("testcases/testcase1/data1.txt");
+    BSA.LoadDataMap("testcases/testcase3/data1.txt");
 
     Asock = SocketConnection("UDP", APort, true);
 
@@ -437,7 +454,7 @@ int main(void){
 
 		    	BSA.SendUDP(msg_countryList);
 
-		    	std::cout<<"Server A has sent country list to Main Server "<<std::endl;
+		    	std::cout<<"Server A has sent country list to Main Server "<<std::endl<<std::endl;
 
 		    	exit(0);
 		    }
@@ -477,6 +494,8 @@ int main(void){
 
 	   			std::cout<< "The server A has sent the results to the Main Server" << std::endl;
 	   		}
+	   		// to separate and easier to read
+	   		std::cout<<std::endl;
 	   		exit(0);
 	    }
 	    
